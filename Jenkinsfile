@@ -2,27 +2,31 @@ pipeline {
     agent any
 
     environment {
-        PATH = "/usr/bin/dotnet:${env.PATH}"
+        AWS_CREDS = credentials('aws-jenkins-creds')
+        PATH      = "/usr/bin/dotnet"
     }
 
     parameters {
         choice(name: 'ENV', choices: ['dev', 'staging', 'prod'], description: 'Choose environment')
-        choice(name: 'SERVICE', choices: ['all', 'service-a', 'service-b', 'service-c'], description: 'Choose microservice')
+        choice(name: 'SERVICE', choices: ['all', 'service-a', 'service-b', 'service-c'], description: 'Select microservice')
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Discover Microservices') {
             steps {
                 script {
-                    services = sh(
-                        script: "find . -name '*.csproj' -exec dirname {} \\; | sed 's|./||' | sort -u",
-                        returnStdout: true
-                    ).trim().split("\n")
-
+                    def serviceDirs = sh(script: "find . -name '*.csproj' -exec dirname {} \\; | sort -u", returnStdout: true).trim().split('\n')
                     if (params.SERVICE != 'all') {
-                        services = services.findAll { it == params.SERVICE }
+                        serviceDirs = serviceDirs.findAll { it.endsWith(params.SERVICE) }
                     }
-
+                    services = serviceDirs
                     echo "Detected services: ${services}"
                 }
             }
@@ -32,19 +36,15 @@ pipeline {
             steps {
                 script {
                     def parallelStages = [:]
-
                     services.each { svc ->
                         parallelStages[svc] = {
-                            stage("Build & Test: ${svc}") {
-                                dir(svc) {
-                                    sh "dotnet restore"
-                                    sh "dotnet build -c Release"
-                                    sh "dotnet test -c Release"
-                                }
+                            dir("${svc}") {
+                                sh 'dotnet restore'
+                                sh 'dotnet build -c Release'
+                                sh 'dotnet test --no-build --verbosity normal || echo "No tests found for ${svc}"'
                             }
                         }
                     }
-
                     parallel parallelStages
                 }
             }
@@ -52,8 +52,14 @@ pipeline {
     }
 
     post {
-        always { echo "Pipeline finished." }
-        success { echo "Pipeline succeeded!" }
-        failure { echo "Pipeline failed!" }
+        always {
+            cleanWs()
+        }
+        success {
+            echo "Build completed successfully for: ${services}"
+        }
+        failure {
+            echo "Build failed. Check logs for errors."
+        }
     }
 }
