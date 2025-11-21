@@ -2,9 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SERVER     = 'sonarqube-server'
-        SONAR_AUTH_TOKEN = credentials('sonarQube_token')
-        PATH = "/usr/bin/dotnet"
+        PATH = "/usr/bin/dotnet:${env.PATH}"
     }
 
     parameters {
@@ -13,22 +11,14 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/xentra-gabrielynigojavierto/testrepo2'
-            }
-        }
-
         stage('Discover Microservices') {
             steps {
                 script {
-                    // Find all directories containing a .csproj file
                     services = sh(
                         script: "find . -name '*.csproj' -exec dirname {} \\; | sed 's|./||' | sort -u",
                         returnStdout: true
                     ).trim().split("\n")
 
-                    // Filter if user selected a specific service
                     if (params.SERVICE != 'all') {
                         services = services.findAll { it == params.SERVICE }
                     }
@@ -59,35 +49,11 @@ pipeline {
                 }
             }
         }
-
-        stage('SonarQube Scan') {
-            steps {
-                script {
-                    services.each { svc ->
-                        dir(svc) {
-                            withSonarQubeEnv("${SONAR_SERVER}") {
-                                sh """
-                                    dotnet sonarscanner begin /k:"${svc}" /d:sonar.login="${env.SONAR_AUTH_TOKEN}" /d:sonar.host.url="${SONAR_SERVER}"
-                                    dotnet build -c Release
-                                    dotnet sonarscanner end /d:sonar.login="${env.SONAR_AUTH_TOKEN}"
-                                """
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     post {
-        always {
-            echo "Pipeline finished."
-        }
-        success {
-            echo "Pipeline succeeded!"
-        }
-        failure {
-            echo "Pipeline failed!"
-        }
+        always { echo "Pipeline finished." }
+        success { echo "Pipeline succeeded!" }
+        failure { echo "Pipeline failed!" }
     }
 }
