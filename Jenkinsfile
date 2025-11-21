@@ -3,6 +3,8 @@ agent any
 
 environment {
     PATH = "/usr/bin/dotnet:${env.PATH}"
+    SONAR_AUTH_TOKEN = credentials('sonarQube_token')
+
 }
 
 parameters {
