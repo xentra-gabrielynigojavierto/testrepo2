@@ -17,6 +17,30 @@ stages {
             git branch: 'main', url: 'https://github.com/xentra-gabrielynigojavierto/testrepo2'
         }
     }
+    stage('SonarQube Scan') {
+        steps {
+            script {
+                // Requires Jenkins SonarQube plugin configured with a server named "sonarqube"
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh """
+                        dotnet sonarscanner begin \
+                            /k:"${JOB_NAME}" \
+                            /d:sonar.host.url="${http://3.15.149.51:9000}" \
+                            /d:sonar.login="${sonarQube_token}"
+                    """
+
+                    // Run the build once for code analysis
+                    sh "dotnet build"
+
+                    sh """
+                        dotnet sonarscanner end \
+                            /d:sonar.login="${sonarQube_token}"
+                    """
+                }
+            }
+        }
+    }
+
 
     stage('Select Services') {
         steps {
