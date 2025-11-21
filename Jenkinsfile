@@ -2,7 +2,8 @@ pipeline {
 agent any
 
 environment {
-    PATH = "/usr/bin/dotnet:${env.PATH}"
+    PATH = "/home/jenkins/.dotnet/tools:/usr/bin/dotnet:${env.PATH}"
+    
 }
 
 parameters {
