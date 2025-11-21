@@ -1,33 +1,42 @@
 pipeline {
     agent any
 
-
     stages {
         stage('Checkout') {
             steps {
+                // Grab the latest code from GitHub
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Hello') {
             steps {
-                sh 'mvn clean install'
+                // Just print a message
+                echo "Hello! A push just happened at ${env.BUILD_URL}"
             }
         }
 
-        stage('Test') {
+        stage('List Files') {
             steps {
-                sh 'mvn test'
+                // Show the repo contents
+                sh 'ls -la'
+            }
+        }
+
+        stage('Create a File') {
+            steps {
+                // Create a file as an example action
+                sh 'echo "Build ran at $(date)" > build-info.txt'
             }
         }
     }
 
     post {
         success {
-            echo 'Build succeeded!'
+            echo 'Pipeline finished successfully!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed!'
         }
     }
 }
