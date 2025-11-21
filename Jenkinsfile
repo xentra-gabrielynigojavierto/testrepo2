@@ -22,9 +22,9 @@ pipeline {
         stage('Discover Microservices') {
             steps {
                 script {
-                    // Just read files or directories
                     def services = findFiles(glob: 'service-*/**/pom.xml')
-                    echo "Found microservices: ${services*.path}"
+                def paths = services.collect { it.getPath() }   // use getPath() method
+                echo "Found microservices: ${paths}"
                 }
             }
         }
