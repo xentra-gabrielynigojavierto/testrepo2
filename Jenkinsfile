@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_CREDS = credentials('aws-jenkins-creds')
+       
         PATH      = "/usr/bin/dotnet"
     }
 
@@ -53,7 +53,8 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            node{cleanWs()}
+            
         }
         success {
             echo "Build completed successfully for: ${services}"
