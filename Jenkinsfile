@@ -22,12 +22,9 @@ pipeline {
         stage('Discover Microservices') {
             steps {
                 script {
-                    def serviceDirs = sh(script: "find . -name '*.csproj' -exec dirname {} \\; | sort -u", returnStdout: true).trim().split('\n')
-                    if (params.SERVICE != 'all') {
-                        serviceDirs = serviceDirs.findAll { it.endsWith(params.SERVICE) }
-                    }
-                    services = serviceDirs
-                    echo "Detected services: ${services}"
+                    // Just read files or directories
+                    def services = findFiles(glob: 'service-*/**/pom.xml')
+                    echo "Found microservices: ${services*.path}"
                 }
             }
         }
