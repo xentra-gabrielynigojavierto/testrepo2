@@ -23,9 +23,9 @@ stages {
             script {
                 // Map service names to directories and csproj files
                 def serviceMap = [
-                    'service-a': [folder: "service-a", csproj: "ServiceA.csproj"],
-                    'service-b': [folder: "service-b", csproj: "ServiceB.csproj"],
-                    'service-c': [folder: "service-c", csproj: "ServiceC.csproj"]
+                    'service-a': [folder: "service-a", csproj: "servicea.csproj"],
+                    'service-b': [folder: "service-b", csproj: "serviceb.csproj"],
+                    'service-c': [folder: "service-c", csproj: "servicec.csproj"]
                 ]
 
                 if (params.SERVICE == 'all') {
