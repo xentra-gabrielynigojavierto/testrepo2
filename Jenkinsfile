@@ -22,9 +22,12 @@ pipeline {
         stage('Discover Microservices') {
             steps {
                 script {
-                    def services = findFiles(glob: 'service-*/**/pom.xml')
-                def paths = services.collect { it.getPath() }   // use getPath() method
-                echo "Found microservices: ${paths}"
+                    def serviceDirs = sh(script: "find . -name '*.csproj' -exec dirname {} \\; | sort -u", returnStdout: true).trim().split('\n')
+                    if (params.SERVICE != 'all') {
+                        serviceDirs = serviceDirs.findAll { it.endsWith(params.SERVICE) }
+                    }
+                    services = serviceDirs
+                    echo "Detected services: ${services}"
                 }
             }
         }
@@ -50,8 +53,8 @@ pipeline {
 
     post {
         always {
+        
             cleanWs()
-            
         }
         success {
             echo "Build completed successfully for: ${services}"
