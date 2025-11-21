@@ -40,6 +40,21 @@ stages {
         }
     }
 
+    stage('SonarQube Analysis') {
+    environment {
+        SONARQUBE_SERVER = 'http://3.15.149.51:9000'
+        SONARQUBE_TOKEN  = credentials('sonarQube_token') // Jenkins credential ID
+    }
+    steps {
+        withSonarQubeEnv('SonarQubeServer') {
+            sh "dotnet sonarscanner begin /k:\"YourProjectKey\" /d:sonar.host.url=${SONARQUBE_SERVER} /d:sonar.login=${SONARQUBE_TOKEN}"
+            sh "dotnet build"
+            sh "dotnet sonarscanner end /d:sonar.login=${SONARQUBE_TOKEN}"
+        }
+    }
+}
+
+
     stage('Build & Test') {
         steps {
             script {
