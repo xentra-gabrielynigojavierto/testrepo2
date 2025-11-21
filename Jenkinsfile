@@ -39,7 +39,7 @@ stages {
             }
         }
     }
-
+    
 
     stage('Build & Test') {
         steps {
@@ -60,21 +60,6 @@ stages {
 
                 parallel parallelStages
             }
-        }
-    }
-}
-
-stage('SonarQube Analysis') {
-    environment {
-        SONARQUBE_SERVER = 'http://your-sonarqube-server:9000'
-    }
-    steps {
-        withCredentials([string(credentialsId: 'sonarQube_token', variable: 'SONARQUBE_TOKEN')]) {
-            sh '''
-                dotnet sonarscanner begin /k:"YourProjectKey" /d:sonar.host.url=$SONARQUBE_SERVER /d:sonar.login=$SONARQUBE_TOKEN
-                dotnet build
-                dotnet sonarscanner end /d:sonar.login=$SONARQUBE_TOKEN
-            '''
         }
     }
 }
