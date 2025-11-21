@@ -3,8 +3,6 @@ agent any
 
 environment {
     PATH = "/usr/bin/dotnet:${env.PATH}"
-    SONAR_AUTH_TOKEN = credentials('sonarQube_token')
-
 }
 
 parameters {
@@ -19,21 +17,6 @@ stages {
             git branch: 'main', url: 'https://github.com/xentra-gabrielynigojavierto/testrepo2'
         }
     }
-stage('SonarQube Scan') {
-    steps {
-        script {
-            withSonarQubeEnv('SonarQubeServer') {
-                sh 'dotnet sonarscanner begin /k:"${JOB_NAME}" /d:sonar.host.url="http://3.15.149.51:9000" /d:sonar.login="${SONAR_AUTH_TOKEN}"'
-
-                // Run the build once for code analysis
-                sh 'dotnet build'
-
-                sh 'dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"'
-            }
-        }
-    }
-}
-
 
 
     stage('Select Services') {
