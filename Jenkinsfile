@@ -1,74 +1,79 @@
 pipeline {
-    agent any
+agent any
 
-    environment {
-    
-        PATH = "/usr/bin/dotnet:${env.PATH}"
-    }
+```
+environment {
+    PATH = "/usr/bin/dotnet:${env.PATH}"
+}
 
-    parameters {
-        choice(name: 'ENV', choices: ['dev', 'staging', 'prod'], description: 'Choose environment')
-        choice(name: 'SERVICE', choices: ['all', 'service-a', 'service-b', 'service-c'], description: 'Choose microservice')
-    }
+parameters {
+    choice(name: 'ENV', choices: ['dev', 'staging', 'prod'], description: 'Choose environment')
+    choice(name: 'SERVICE', choices: ['all', 'service-a', 'service-b', 'service-c'], description: 'Choose microservice')
+}
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/xentra-gabrielynigojavierto/testrepo2'
-            }
+stages {
+
+    stage('Checkout') {
+        steps {
+            git branch: 'main', url: 'https://github.com/xentra-gabrielynigojavierto/testrepo2'
         }
+    }
 
-        stage('Discover Microservices') {
-            steps {
-                script {
-                    // Find all directories containing a .csproj file
-                    services = sh(
-                        script: "find . -name '*.csproj' -exec dirname {} \\; | sed 's|./||' | sort -u",
-                        returnStdout: true
-                    ).trim().split("\n")
+    stage('Select Services') {
+        steps {
+            script {
+                // Map service names to directories and csproj files
+                def serviceMap = [
+                    'service-a': [folder: "service-a", csproj: "ServiceA.csproj"],
+                    'service-b': [folder: "service-b", csproj: "ServiceB.csproj"],
+                    'service-c': [folder: "service-c", csproj: "ServiceC.csproj"]
+                ]
 
-                    // Filter if user selected a specific service
-                    if (params.SERVICE != 'all') {
-                        services = services.findAll { it == params.SERVICE }
-                    }
-
-                    echo "Detected services: ${services}"
+                if (params.SERVICE == 'all') {
+                    services = serviceMap
+                } else {
+                    services = [(params.SERVICE): serviceMap[params.SERVICE]]
                 }
+
+                echo "Selected services: ${services.keySet()}"
             }
         }
+    }
 
-        stage('Build & Test') {
-            steps {
-                script {
-                    def parallelStages = [:]
+    stage('Build & Test') {
+        steps {
+            script {
+                def parallelStages = [:]
 
-                    services.each { svc ->
-                        parallelStages[svc] = {
-                            stage("Build & Test: ${svc}") {
-                                dir(svc) {
-                                    sh "dotnet restore"
-                                    sh "dotnet build -c Release"
-                                    sh "dotnet test -c Release"
-                                }
+                services.each { name, svc ->
+                    parallelStages[name] = {
+                        stage("Build & Test: ${name}") {
+                            dir(svc.folder) {
+                                sh "dotnet restore ${svc.csproj}"
+                                sh "dotnet build ${svc.csproj} -c Release"
+                                sh "dotnet test ${svc.csproj} -c Release"
                             }
                         }
                     }
-
-                    parallel parallelStages
                 }
+
+                parallel parallelStages
             }
         }
     }
+}
 
-    post {
-        always {
-            echo "Pipeline finished."
-        }
-        success {
-            echo "Pipeline succeeded!"
-        }
-        failure {
-            echo "Pipeline failed!"
-        }
+post {
+    always {
+        echo "Pipeline finished."
     }
+    success {
+        echo "Pipeline succeeded!"
+    }
+    failure {
+        echo "Pipeline failed!"
+    }
+}
+```
+
 }
